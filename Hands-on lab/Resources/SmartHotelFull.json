@@ -1,0 +1,158 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "adminUsername": {
+            "type": "string",
+            "minLength": 1,
+            "defaultValue": "demouser",
+            "metadata": {
+                "description": "Username for the Virtual Machine."
+            }
+        },
+        "adminPassword": {
+            "type": "securestring",
+            "defaultValue": "demo!pass123",
+            "metadata": {
+                "description": "Password for the Virtual Machine."
+            }
+        },
+        "resourceGroupBaseName": {
+            "type": "string",
+            "defaultValue": "SmartHotel",
+            "metadata": {
+                "description": "Prefix to use for Resource Group names (i.e. 'SmartHotel' would generate 'SmartHotelRG' resource group)"
+            }
+        },
+        "includeLandingZone": {
+            "type": "bool",
+            "defaultValue": true,
+            "metadata": {
+                "description": "Whether or not to pre-provision the Landing Zone resources along with deployment"
+            }
+        },
+        "landingZoneLocation": {
+            "type": "string",
+            "defaultValue": "[deployment().location]",
+            "metadata": {
+                "description": "If deploying the Landing Zone resources along with the source services, which region to put the landing zone resources in. (ie: westus, eastasia, northeurope, etc.)"
+            },
+            "allowedValues": [
+                "centralus",
+                "eastus",
+                "eastus2",
+                "westus",
+                "westus2",
+                "westus3",
+                "westcentralus",
+                "northcentralus",
+                "southcentralus",
+                "brazilsouth",
+                "brazilsoutheast",
+                "eastasia",
+                "southeastasia",
+                "northeurope",
+                "westeurope",
+                "japanwest",
+                "japaneast",
+                "australiacentral",
+                "australiacentral2",
+                "australiaeast",
+                "australiasoutheast",
+                "southindia",
+                "centralindia",
+                "westindia",
+                "canadacentral",
+                "canadaeast",
+                "uksouth",
+                "ukwest",
+                "koreacentral",
+                "koreasouth",
+                "francecentral",
+                "francesouth",
+                "uaecentral",
+                "uaenorth",
+                "southafricanorth",
+                "southafricawest",
+                "switzerlandnorth",
+                "switzerlandwest",
+                "germanynorth",
+                "germanywestcentral",
+                "norwaywest",
+                "norwayeast",
+                "swedencentral"
+            ]
+        }
+    },
+    "variables": {
+        "baseUri": "https://openhackpublic.blob.core.windows.net/lob-migration/sept-2021",
+        "HostRG": "[concat(parameters('resourceGroupBaseName'), 'HostRG')]",
+        "hostUri": "[concat(variables('baseUri'),'/SmartHotelHost.json')]",
+        "LZRG": "[concat(parameters('resourceGroupBaseName'), 'RG')]",
+        "landingZoneUri": "[concat(variables('baseUri'),'/SmartHotelLZ.json')]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Resources/resourceGroups",
+            "apiVersion": "2021-04-01",
+            "name": "[variables('HostRG')]",
+            "location": "[deployment().location]",
+            "properties": {}
+        },
+        {
+            "condition": "[parameters('includeLandingZone')]",
+            "type": "Microsoft.Resources/resourceGroups",
+            "apiVersion": "2021-04-01",
+            "name": "[variables('LZRG')]",
+            "location": "[parameters('landingZoneLocation')]",
+            "properties": {}
+        },
+        {
+            "condition": "[parameters('includeLandingZone')]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2017-05-10",
+            "name": "landingZoneDeployment",
+            "resourceGroup": "[variables('LZRG')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/resourceGroups/', variables('LZRG'))]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "parameters": {
+                    "resourceGroup": {
+                        "value": "[variables('LZRG')]"
+                    }
+                },
+                "templateLink": {
+                    "uri": "[variables('landingZoneUri')]",
+                    "contentVersion": "1.0.0.0"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2017-05-10",
+            "name": "hostDeployment",
+            "resourceGroup": "[variables('HostRG')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/resourceGroups/', variables('HostRG'))]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "parameters": {
+                    "adminUsername": {
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "adminPassword": {
+                        "value": "[parameters('adminPassword')]"
+                    }
+                },
+                "templateLink": {
+                    "uri": "[variables('hostUri')]",
+                    "contentVersion": "1.0.0.0"
+                }
+            }
+        }
+    ],
+    "outputs": {}
+}
