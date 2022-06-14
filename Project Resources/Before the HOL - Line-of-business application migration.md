@@ -1,8 +1,4 @@
 
-© 2022 Microsoft Corporation. All rights reserved.
-
-Microsoft and the trademarks listed at <https://www.microsoft.com/en-us/legal/intellectualproperty/Trademarks/Usage/General.aspx> are trademarks of the Microsoft group of companies. All other trademarks are property of their respective owners.
-
 **Contents**
 
 <!-- TOC -->
